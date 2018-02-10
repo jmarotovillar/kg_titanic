@@ -7,7 +7,8 @@ know if a given passanger has survived or not
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import mean_squared_error, r2_score, f1_score
 
 # Importing data
 train=pd.read_csv('../data/train.csv')
@@ -123,12 +124,12 @@ gender_3c[third_class_passangers['Age']<12]='children'
 gender_3c['Sex_surv']=gender_surv_3c
 
 
+
 figure, axarr=plt.subplots(nrows=3,ncols=1)
 
 axarr[0].hist(gender_1c)
 axarr[0].set_title('First class')
 axarr[0].set_ylabel('Number of passangers')
-axarr[0].legend()
 axarr[1].hist(gender_2c)
 axarr[1].set_title('Second class')
 axarr[1].set_ylabel('Number of passangers')
@@ -136,9 +137,49 @@ axarr[2].hist(gender_3c)
 axarr[2].set_title('Third class')
 axarr[2].set_ylabel('Number of passangers')
 axarr[2].set_xlabel('Gender')
+plt.legend(loc='upper right')
 plt.show()
 
 
+"""
+We will train now a logistic regression algorithm to predict if a passenger will survive or not.
+One of the most interesting features that we have discovered in our data wrangling process are:
+- Gender
+- Age
+- Class
+Then those will be the features in which we will train our algorithm on
+
+First we will divide the training set in 80% training and 20% validation
+"""
+num_observations = len(train)
+training_obs =int(np.ceil(num_observations*0.8))
+training_set = train.loc[:training_obs,['Sex','Age','Pclass']]
+y_training=train.loc[:training_obs,['Survived']] 
+validation_set=train.loc[training_obs:,['Sex','Age','Pclass']]
+y_val=train.loc[training_obs:,['Survived']]
+
+# Now to train our model we will convert Sex into an int 1==female, 0==male
+training_set.loc[training_set['Sex']=='female',['Sex']]=1
+training_set.loc[training_set['Sex']=='male',['Sex']]=0
+validation_set.loc[validation_set['Sex']=='female',['Sex']]=1
+validation_set.loc[validation_set['Sex']=='male',['Sex']]=0
+test.loc[test['Sex']=='female',['Sex']]=1
+test.loc[test['Sex']=='male',['Sex']]=0
+
+# Here we fill the missing values with the median of each column
+training_set.fillna(training_set.median(), inplace=True, axis=0)
+validation_set.fillna(validation_set.median(), inplace=True, axis=0)
+test=test.loc[:,['Sex','Age','Pclass']]
+
+
+# Here is where we define and train our model. As we want to classify passengers
+# in 2 categories (1=Survived, 0=Deceased) we will use a logistic regression mode
+
+logreg = LogisticRegression()
+logreg.fit(training_set, y_training)
+
+y_val_predicted = logreg.predict(validation_set)
+print('F-score of logistic regression classifier on validation set: {:.2f}'.format(f1_score(y_val, y_val_predicted)))
 
 
 
@@ -156,8 +197,13 @@ plt.show()
 
 
 
-# 3- In general, people who bought a more expensive ticket had more chances to survive or not?
 
 
-# 4- Did it matter where people embarked the Titanic in terms of survival?
+
+
+
+
+
+
+
 
